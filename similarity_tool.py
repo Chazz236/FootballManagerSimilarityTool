@@ -5,11 +5,11 @@ import streamlit as st #https://docs.streamlit.io/develop/api-reference
 import plotly.graph_objects as go #https://plotly.com/python/radar-chart/
 
 #input and output files
-html_file = 'fm2020_players_2019.html'
-output_csv = 'fm2020_players_2019.csv'
+html_file = 'fm2020_players_june_2019.html'
+output_csv = 'fm2020_players_june_2019.csv'
 
 #defining all the attributes
-attr_cols = ['1v1', 'Acc', 'Aer', 'Agg', 'Agi', 'Ant', 'Bal', 'Bra', 'Cmd', 'Cmp', 'Cnt', 'Com', 'Cor', 'Cro', 'Dec', 'Det', 'Dri', 'Ecc', 'Fin', 'Fir', 'Fla', 'Fre', 'Han', 'Hea', 'Jum', 'Kic', 'L Th', 'Ldr', 'Lon', 'Mar', 'Nat Fit', 'OtB', 'Pac', 'Pas', 'Pen', 'Pos', 'Pun', 'Ref', 'Sta', 'Str', 'Tck', 'Tea', 'Tec', 'Thr', 'TRO', 'Vis', 'Wor']
+attr_cols = ['Acc', 'Aer', 'Agg', 'Agi', 'Ant', 'Bal', 'Bra', 'Cmd', 'Cmp', 'Cnt', 'Com', 'Cor', 'Cro', 'Dec', 'Det', 'Dri', 'Ecc', 'Fin', 'Fir', 'Fla', 'Fre', 'Han', 'Hea', 'Jum', 'Kic', 'L Th', 'Ldr', 'Lon', 'Mar', 'Nat', 'OtB', '1v1', 'Pac', 'Pas', 'Pen', 'Pos', 'Pun', 'Ref', 'Sta', 'Str', 'Tck', 'Tea', 'Tec', 'Thr', 'TRO', 'Vis', 'Wor']
 
 #separate gk attributes from outfield attributes
 gk_attr = ['Aer', 'Cmd', 'Com', 'Ecc', 'Han', 'Kic', '1v1', 'Pun', 'Ref', 'TRO', 'Thr']
@@ -47,15 +47,8 @@ def clean_and_process(html_file, output_csv):
         #convert html table to dataframe
         df = pd.read_html(html_file, flavor='html5lib')[0]
 
-        #drop first nat column, which is nationality, rename other nat to nat fit
-        cols = list(df.columns)
-        cols[6] = 'Nationality'
-        cols[31] = 'Nat Fit'
-        df.columns = cols
-        df = df.drop(columns = ['Nationality'])
-
         #remove columns that aren't necessary
-        df = df.drop(columns = ['Inf', 'Yth Apps', 'Caps', 'Team', 'Goals', 'Based', 'NoB', 'Yth Gls', 'EU National'])
+        df = df.drop(columns = ['Inf'])
 
         #replace empty cells with - (only club has empty cells)
         df = df.replace('', '-') 
@@ -83,10 +76,6 @@ def clean_and_process(html_file, output_csv):
        
         #make int - age, height, weight, caps, attributes
         df[attr_cols] = df[attr_cols].astype(int)
-
-        #order cols:
-        ordered_cols = ['Name', 'Age', 'Height', 'Weight', 'Personality', 'Position', 'Club', 'Division', 'Value', 'Wage', 'Expires', 'Min Fee Rls']
-        df = df[ordered_cols + attr_cols]
 
         #create csv file
         df.to_csv(output_csv, encoding='utf-8')
