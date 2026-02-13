@@ -208,9 +208,12 @@ st.sidebar.header('Search Settings')
 player_list = df['Search'].tolist()
 player_map = dict(zip(df['Search'], df.index))
 
-#select the player to find similar players
-selected_player_name = st.sidebar.selectbox('Select a Player', options=list(player_map.keys()), index=0)
-selected_index = player_map[selected_player_name]
+#player and index to find similar players, none if player isn't selected
+selected_player_name = st.sidebar.selectbox('Select a Player', options=list(player_map.keys()), index=None)
+if selected_player_name:
+    selected_index = player_map[selected_player_name]
+else:
+    selected_index = None
 
 #filters for finding similar players, wage and value are formated
 age = st.sidebar.slider('Max Age', min_value=16, max_value=45, value=45)
@@ -221,13 +224,17 @@ value = st.sidebar.select_slider('Max Value (£)', options=[0, 10000, 50000, 100
 search = st.sidebar.button('Find Similar Players')
 
 if search:
-    #spinner for loading
-    with st.spinner('Calculating...'):
-        #call function to get similar players
-        results = find_players(selected_index, age, value, wage)
+    if selected_index is not None:
+        #spinner for loading
+        with st.spinner('Calculating...'):
+            #call function to get similar players
+            results = find_players(selected_index, age, value, wage)
 
-        #if similar players exist with filters, then show at most 10 similar players, otherwise display warning
-        if not results.empty:
-            display(results, selected_index)
-        else:
-            st.warning('No players found matching filters')
+            #if similar players exist with filters, then show at most 10 similar players, otherwise display warning
+            if not results.empty:
+                display(results, selected_index)
+            else:
+                st.warning('No players found matching filters')
+    else:
+        #error message if a player is not selected
+        st.sidebar.error("You must select a player first!")
