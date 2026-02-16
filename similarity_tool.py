@@ -4,9 +4,8 @@ from sklearn.neighbors import NearestNeighbors
 import streamlit as st #https://docs.streamlit.io/develop/api-reference
 import plotly.graph_objects as go #https://plotly.com/python/radar-chart/
 
-#input and output files
-html_file = 'fm2020_players_june_2019.html'
-output_csv = 'fm2020_players_june_2019.csv'
+#make the page wide to fit table
+st.set_page_config(page_title='FM2020 Player Similarity Finder', layout='wide')
 
 #defining all the attributes
 attr_cols = ['Acc', 'Aer', 'Agg', 'Agi', 'Ant', 'Bal', 'Bra', 'Cmd', 'Cmp', 'Cnt', 'Com', 'Cor', 'Cro', 'Dec', 'Det', 'Dri', 'Ecc', 'Fin', 'Fir', 'Fla', 'Fre', 'Han', 'Hea', 'Jum', 'Kic', 'L Th', 'Ldr', 'Lon', 'Mar', 'Nat', 'OtB', '1v1', 'Pac', 'Pas', 'Pen', 'Pos', 'Pun', 'Ref', 'Sta', 'Str', 'Tck', 'Tea', 'Tec', 'Thr', 'TRO', 'Vis', 'Wor']
@@ -18,86 +17,33 @@ outfield_attr = [col for col in attr_cols if col not in gk_attr]
 #add some necessary gk attributes, including sweeper keeper attributes as well
 gk_attr = gk_attr + ['Fir', 'Pas', 'Ant', 'Cmp', 'Cnt', 'Dec', 'Pos', 'Vis', 'Acc', 'Agi']
 
-def value_cleaner(value):
-    #remove currency symbol
-    value = value.replace('£', '')
-    
-    #if value is in millions or thousands, adjust accordingly
-    if (value.find('M') != -1):
-        value = float(value.replace('M', '')) * 1000000
-    elif (value.find('K') != -1):
-        value = float(value.replace('K', '')) * 1000
-    
-    return int(value)
-    
-def wage_cleaner(wage):
-    #if player has no wage, put 0
-    if (wage == '-' or pd.isna(wage)):
-        return 0
-    
-    #remove string characters to return a integer value
-    wage = wage.replace('£', '')
-    wage = wage.replace(' p/w', '')
-    wage = wage.replace(',', '')
-    
-    return int(wage)
-
-def clean_and_process(html_file, output_csv):
-    try:
-        #convert html table to dataframe
-        df = pd.read_html(html_file, flavor='html5lib')[0]
-
-        #remove columns that aren't necessary
-        df = df.drop(columns = ['Inf'])
-
-        #replace empty cells with - (only club has empty cells)
-        df = df.replace('', '-') 
-
-        #remove nationality from name
-        df['Name'] = df['Name'].str.split(' - ').str[0]
-
-        #convert age to int
-        df['Age'] = df['Age'].astype(int)
-
-        #remove cm from height
-        df['Height'] = df['Height'].str.replace(' cm', '').astype(int)
-
-        #remove kg from weight
-        df['Weight'] = df['Weight'].str.replace(' kg', '').astype(int)
-
-        #clean up value
-        df['Value'] = df['Value'].apply(value_cleaner)
-
-        #clean up wage
-        df['Wage'] = df['Wage'].apply(wage_cleaner)
-
-        #replace nan with a -
-        df['Club'] = df['Club'].fillna('-')
-       
-        #make int - age, height, weight, caps, attributes
-        df[attr_cols] = df[attr_cols].astype(int)
-
-        #create csv file
-        df.to_csv(output_csv, encoding='utf-8')
-        
-        # print(df.info())
-        
-        return df
-
-    except Exception as e:
-        #print error
-        print(f'Error, it was: {e}')
-
 @st.cache_data
 def load_data(path):
-    return pd.read_csv(path)
+    df = pd.read_csv(path)
+
+    #create unique identifier for searching
+    df['Search'] = df.index.astype(str) + ' - ' + df['Name'] + ', ' + df['Club']
+    
+    #scale dfs with minmax so that all relevant attributes are weighed evenly
+    outfield_df = MinMaxScaler().fit_transform(df[outfield_attr])
+    gk_df = MinMaxScaler().fit_transform(df[gk_attr])
+
+    return df, outfield_df, gk_df
+
+@st.cache_resource
+def train_models(outfield_df, gk_df):
+    # using cosine similarity to find players with similar attribute spread
+    outfield_finder = NearestNeighbors(metric='cosine').fit(outfield_df)
+    gk_finder = NearestNeighbors(metric='cosine').fit(gk_df)
+
+    return outfield_finder, gk_finder
 
 def find_players(index, max_age = 100, max_value = 200000000,max_wage = 1000000):
     #check if player is gk or outfield, use according finder
     if df.iloc[index]['Position'] == 'GK':
-        distances, indices = gk_finder.kneighbors(gk_df_scaled[index].reshape(1, -1), n_neighbors=500)
+        distances, indices = gk_finder.kneighbors(gk_df[index].reshape(1, -1), n_neighbors=500)
     else:
-        distances, indices = outfield_finder.kneighbors(outfield_df_scaled[index].reshape(1, -1), n_neighbors=500)
+        distances, indices = outfield_finder.kneighbors(outfield_df[index].reshape(1, -1), n_neighbors=500)
     
     #add similarity column to see how close compares are to player
     similars = df.iloc[indices[0]].copy()
@@ -169,39 +115,13 @@ def display(results, selected_index):
         st.subheader('Attribute Comparison')
         st.write('Select a player from the table too see the attribute spread')
 
-#cleaning, preprocessing, feature selection
-# df = clean_and_process(html_file, output_csv)
-
-#read csv if clean_and_process is done
-df = load_data(output_csv)
-
-#set up dfs for outfield and gk
-outfield_df = df[outfield_attr]
-gk_df = df[gk_attr]
-
-#scale dfs with minmax so that all relevant attributes are weighed evenly
-outfield_df_scaled = MinMaxScaler().fit_transform(outfield_df)
-gk_df_scaled = MinMaxScaler().fit_transform(gk_df)
-
-# using cosine similarity to find players with similar attribute spread
-outfield_finder = NearestNeighbors(metric='cosine')
-gk_finder = NearestNeighbors(metric='cosine')
-
-#fit nearest neighbours estimator using scaled dfs
-outfield_finder.fit(outfield_df_scaled)
-gk_finder.fit(gk_df_scaled)
-
-#streamlit part
-
-#make the page wide to fit table
-st.set_page_config(layout='wide')
+#get dataframes and models
+df, outfield_df, gk_df = load_data('fm2020_players_june_2019.csv')
+outfield_finder, gk_finder = train_models(outfield_df, gk_df)
 
 #writing streamlit title and description
 st.title('FM2020 Player Similarity Finder')
 st.write('Find similar players based on their attribute spread')
-
-#create unique identifier for searching in streamlit
-df['Search'] = df.index.astype(str) + ' - ' + df['Name'] + ', ' + df['Club']
 
 #setting up sidebar for streamlit
 st.sidebar.header('Search Settings')
@@ -237,4 +157,4 @@ if search:
                 st.warning('No players found matching filters')
     else:
         #error message if a player is not selected
-        st.sidebar.error("You must select a player first!")
+        st.sidebar.error('Select a player from the dropdown')
