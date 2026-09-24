@@ -113,7 +113,7 @@ def display(results, selected_index):
         st.dataframe(data=df.iloc[[selected_index, compare_id]][show_cols].style.format({'Similarity': '{:.2%}', 'Value': '£{:,}','Wage': '£{:,}'}), hide_index=True)
     else:
         st.subheader('Attribute Comparison')
-        st.write('Select a player from the table too see the attribute spread')
+        st.write('Select a player from the table to see the attribute spread')
 
 #get dataframes and models
 df, outfield_df, gk_df = load_data('fm2020_players_june_2019.csv')
