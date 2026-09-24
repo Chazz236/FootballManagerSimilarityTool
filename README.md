@@ -10,7 +10,7 @@
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.52.2-FF4B4B?style=flat&logo=streamlit&logoColor=white)](https://streamlit.io/)
 [![Plotly](https://img.shields.io/badge/Plotly-6.5.0-3F4F75?style=flat&logo=plotly&logoColor=white)](https://plotly.com/python/)
 
-**An interactive machine learning tool designed to identify matching player profiles within a 94k record dataset using 47-dimensional vector analysis.**
+**An interactive machine learning tool for finding similar player profiles using 47-dimensional attribute analysis.**
 
 ---
 
@@ -18,12 +18,14 @@
 
 ## Why I Built This
 
-In the game Football Manager 2020, replacing a key player isn't always about finding a high-rated alternative; it’s about finding a "statistical twin" who fits the same tactical system. 
+In the game Football Manager 2020, replacing a key player isn't always about finding a high-rated alternative; it’s about finding a player with a similar profile who fits the same tactical system.
 
-I built the **Similarity Finder** to move scouting from subjective opinion to mathematical certainty. By treating players as points in a 47-dimensional space, the system identifies replacements based on the **shape of their attribute spread** rather than just their raw ability level. This allows users to:
-* **Discover Statistical Twins:** Utilize K-Nearest Neighbors to find players with nearly identical attribute distributions across 47 technical, mental, and physical attributes
-* **Find Realistic Replacements:** Filter by Age, Market Value, and Wage to find affordable alternatives to superstars
-* **Visualize Scouting Reports:** Instantly compare a target player against the original using overlapping radar charts to see how similar they are
+I built the **Similarity Finder** to make scouting comparisons more data-driven. By treating players as points in a 47-dimensional space, the system identifies similar player profiles based on the **shape of their attribute spread** rather than just their raw ability level. This allows users to:
+* **Find Similar Player Profiles:** Utilize K-Nearest Neighbors to find players with similar attribute distributions
+* **Find Potential Replacements:** Filter by Age, Market Value, and Wage
+* **Visualize Player Comparisons:** Compare a target player against similar profiles using overlapping radar charts
+
+
 
 ---
 
@@ -118,11 +120,11 @@ streamlit run similarity_tool.py
 - Designing a **dual-track preprocessing logic** to handle distinct Goalkeeper and Outfielder attribute sets
 
 ### Machine Learning
-- Implementing **K-Nearest Neighbors (KNN)** to identify "statistical twins" within a **94,000-record dataset**
-- Utilizing **Cosine Similarity** to prioritize attribute distribution ratios over numerical magnitudes
+- Implementing **K-Nearest Neighbors (KNN)** to identify similar player profiles within a **94,000-record dataset**
+- Utilizing **Cosine Similarity** to compare attribute patterns rather than raw attribute magnitudes
 - Engineering a **similarity scoring system** by transforming distance metrics into quantitative benchmarks
 
 ### UI/UX & Data Visualization
-- Visualizing high-density scouting data with interactive **Plotly multi-trace radar charts**
+- Visualizing player attributes with interactive **Plotly multi-trace radar charts**
 - Developing a **stateful dashboard** with **Streamlit** for real-time filtering of age, market value, and weekly wage
 - Utilizing **Streamlit Fragments** to optimize UI performance and isolate visualization updates
